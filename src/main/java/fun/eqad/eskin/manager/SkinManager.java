@@ -131,7 +131,7 @@ public class SkinManager {
 
         playerStorage.setSkinIdOfPlayer(playerUUID, skinDataResult.get().getIdentifier());
 
-        logger.info(playerName + "的皮肤数据已更新");
+        logger.info(playerName + "的皮肤数据已在 " + result.server.name + " 更新");
     }
 
     private String[] uploadSkinToMineSkin(String skinUrl) throws Exception {

@@ -131,9 +131,10 @@ public final class ESkinBukkit extends JavaPlugin implements Listener {
                 }
 
                 String currentTextureId = result.textureId;
-                String cachedTextureId = config.getString(player.getUniqueId().toString());
+                String cachedTextureId = config.getString(player.getUniqueId().toString() + ".texture");
+                String cachedServerName = config.getString(player.getUniqueId().toString() + ".server");
 
-                if (currentTextureId.equals(cachedTextureId)) {
+                if (currentTextureId.equals(cachedTextureId) && result.server.name.equals(cachedServerName)) {
                     getLogger().info(playerName + "的皮肤未变化, 无需更新");
                     return;
                 }
@@ -141,7 +142,8 @@ public final class ESkinBukkit extends JavaPlugin implements Listener {
                 skinManager.applySkinFromTextureId(player.getUniqueId(), playerName, result);
                 SkinsRestorerProvider.get().getSkinApplier(Player.class).applySkin(player);
 
-                config.set(player.getUniqueId().toString(), currentTextureId);
+                config.set(player.getUniqueId().toString() + ".texture", currentTextureId);
+                config.set(player.getUniqueId().toString() + ".server", result.server.name);
                 saveConfig();
 
                 String successMsg = msgConfig.getString("success").replace("%name%", result.server.name);
