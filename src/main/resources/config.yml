@@ -1,5 +1,6 @@
 # 皮肤站列表
 # 插件会按先后顺序依次请求下列的皮肤站, 直到成功获取皮肤为止
+# 可按照此格式继续扩展皮肤站
 skin-servers:
   HelloSkin:
     csl: "https://helloskin.cn/csl/%player%.json"
@@ -7,6 +8,3 @@ skin-servers:
   LittleSkin:
     csl: "https://littleskin.cn/csl/%player%.json"
     texture: "https://littleskin.cn/textures/%texture%"
-  EquestriaSkin:
-    csl: "https://skin.eqmemory.cn/csl/%player%.json"
-    texture: "https://skin.eqmemory.cn/textures/%texture%"
