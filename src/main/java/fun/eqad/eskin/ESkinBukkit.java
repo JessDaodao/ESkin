@@ -1,5 +1,6 @@
 package fun.eqad.eskin;
 
+import fun.eqad.eskin.manager.SkinManager;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;

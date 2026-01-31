@@ -1,5 +1,6 @@
-package fun.eqad.eskin;
+package fun.eqad.eskin.manager;
 
+import fun.eqad.eskin.util.HttpUtil;
 import net.skinsrestorer.api.SkinsRestorer;
 import net.skinsrestorer.api.SkinsRestorerProvider;
 import net.skinsrestorer.api.property.InputDataResult;

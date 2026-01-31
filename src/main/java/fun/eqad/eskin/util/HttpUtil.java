@@ -1,4 +1,4 @@
-package fun.eqad.eskin;
+package fun.eqad.eskin.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
