@@ -1,0 +1,5 @@
+name: ESkin
+version: '1.1.6'
+main: fun.eqad.eskin.ESkin
+softDepend: SkinsRestorer
+author: EQAD Network
