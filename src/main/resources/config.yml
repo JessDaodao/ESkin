@@ -3,10 +3,10 @@
 skin-servers:
   HelloSkin:
     csl: "https://helloskin.cn/csl/%player%.json"
-    texture: 'https://helloskin.cn/textures/%texture%'
+    texture: "https://helloskin.cn/textures/%texture%"
   LittleSkin:
     csl: "https://littleskin.cn/csl/%player%.json"
-    texture: 'https://littleskin.cn/textures/%texture%'
+    texture: "https://littleskin.cn/textures/%texture%"
   XXXSkin:
     csl: "https://xxxskin.cn/csl/%player%.json"
-    texture: 'https://xxxskin.cn/textures/%texture%'
+    texture: "https://xxxskin.cn/textures/%texture%"

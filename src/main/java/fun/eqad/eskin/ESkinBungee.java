@@ -24,6 +24,7 @@ public final class ESkinBungee extends Plugin implements Listener {
     private SkinManager skinManager;
     private Configuration config;
     private Configuration msgConfig;
+    private Configuration mainConfig;
 
     @Override
     public void onEnable() {
@@ -74,6 +75,28 @@ public final class ESkinBungee extends Plugin implements Listener {
             }
             msgConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(msgFile);
 
+            File mainConfigFile = new File(getDataFolder(), "config.yml");
+            if (!mainConfigFile.exists()) {
+                try (InputStream in = getResourceAsStream("config.yml")) {
+                    if (in != null) {
+                        Files.copy(in, mainConfigFile.toPath());
+                    } else {
+                        mainConfigFile.createNewFile();
+                    }
+                }
+            }
+            mainConfig = ConfigurationProvider.getProvider(YamlConfiguration.class).load(mainConfigFile);
+
+            skinManager.clearSkinServers();
+            Configuration skinServers = mainConfig.getSection("skin-servers");
+            if (skinServers != null) {
+                for (String key : skinServers.getKeys()) {
+                    String csl = skinServers.getString(key + ".csl");
+                    String texture = skinServers.getString(key + ".texture");
+                    skinManager.addSkinServer(key, csl, texture);
+                }
+            }
+
         } catch (IOException e) {
             getLogger().warning("无法加载配置文件: " + e.getMessage());
             e.printStackTrace();
@@ -96,14 +119,16 @@ public final class ESkinBungee extends Plugin implements Listener {
         String playerName = player.getName();
 
         getProxy().getScheduler().schedule(this, () -> {
+            SkinManager.SkinSearchResult result = null;
             try {
-                String currentTextureId = skinManager.getPlayerTextureId(playerName);
+                result = skinManager.getPlayerTextureId(playerName);
 
-                if (currentTextureId == null) {
+                if (result == null) {
                     getLogger().info("未能在皮肤站上读取到" + playerName + "的皮肤数据");
                     return;
                 }
 
+                String currentTextureId = result.textureId;
                 String cachedTextureId = config.getString(player.getUniqueId().toString());
 
                 if (currentTextureId.equals(cachedTextureId)) {
@@ -111,17 +136,17 @@ public final class ESkinBungee extends Plugin implements Listener {
                     return;
                 }
 
-                skinManager.applySkinFromTextureId(player.getUniqueId(), playerName, currentTextureId);
+                skinManager.applySkinFromTextureId(player.getUniqueId(), playerName, result);
                 SkinsRestorerProvider.get().getSkinApplier(ProxiedPlayer.class).applySkin(player);
 
                 config.set(player.getUniqueId().toString(), currentTextureId);
                 saveConfig();
 
-                player.sendMessage(new TextComponent(ChatColor.translateAlternateColorCodes('&', msgConfig.getString("success"))));
+                String successMsg = msgConfig.getString("success").replace("%name%", result.server.name);
+                player.sendMessage(new TextComponent(ChatColor.translateAlternateColorCodes('&', successMsg)));
 
             } catch (Exception e) {
-                getLogger().warning(playerName + "的皮肤更新失败: " + e.getMessage());
-                player.sendMessage(new TextComponent(ChatColor.translateAlternateColorCodes('&', msgConfig.getString("failed"))));
+                getLogger().warning(playerName + "出现意外错误: " + e.getMessage());
             }
         }, 1, TimeUnit.SECONDS);
     }

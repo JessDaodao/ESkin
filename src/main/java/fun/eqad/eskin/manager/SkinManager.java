@@ -12,15 +12,37 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 public class SkinManager {
 
-    private static final String SKIN_API_URL = "https://helloskin.cn/%s.json";
-    private static final String TEXTURE_URL = "https://helloskin.cn/textures/%s";
+    public static class SkinServer {
+        public String name;
+        public String csl;
+        public String texture;
 
+        public SkinServer(String name, String csl, String texture) {
+            this.name = name;
+            this.csl = csl;
+            this.texture = texture;
+        }
+    }
+
+    public static class SkinSearchResult {
+        public String textureId;
+        public SkinServer server;
+
+        public SkinSearchResult(String textureId, SkinServer server) {
+            this.textureId = textureId;
+            this.server = server;
+        }
+    }
+
+    private List<SkinServer> skinServers = new ArrayList<>();
     private SkinsRestorer skinsRestorerAPI;
     private SkinStorage skinStorage;
     private PlayerStorage playerStorage;
@@ -28,6 +50,14 @@ public class SkinManager {
 
     public SkinManager(Logger logger) {
         this.logger = logger;
+    }
+
+    public void addSkinServer(String name, String csl, String texture) {
+        skinServers.add(new SkinServer(name, csl, texture));
+    }
+
+    public void clearSkinServers() {
+        skinServers.clear();
     }
 
     private void ensureApiInitialized() {
@@ -38,30 +68,40 @@ public class SkinManager {
         }
     }
 
-    public String getPlayerTextureId(String playerName) throws IOException {
-        String apiUrl = String.format(SKIN_API_URL, playerName);
-        String jsonResponse = HttpUtil.getJson(apiUrl);
+    public SkinSearchResult getPlayerTextureId(String playerName) {
+        for (SkinServer server : skinServers) {
+            try {
+                String apiUrl = server.csl.replace("%player%", playerName);
+                String jsonResponse = HttpUtil.getJson(apiUrl);
 
-        if (jsonResponse == null || jsonResponse.isEmpty()) {
-            return null;
+                if (jsonResponse == null || jsonResponse.isEmpty()) {
+                    continue;
+                }
+
+                String textureId = null;
+                if (jsonResponse.contains("\"slim\":")) {
+                    int start = jsonResponse.indexOf("\"slim\":\"") + 8;
+                    int end = jsonResponse.indexOf("\"", start);
+                    textureId = jsonResponse.substring(start, end);
+                } else if (jsonResponse.contains("\"default\":")) {
+                    int start = jsonResponse.indexOf("\"default\":\"") + 11;
+                    int end = jsonResponse.indexOf("\"", start);
+                    textureId = jsonResponse.substring(start, end);
+                }
+
+                if (textureId != null) {
+                    return new SkinSearchResult(textureId, server);
+                }
+            } catch (Exception e) {
+                logger.warning("从 " + server.name + " 获取皮肤失败: " + e.getMessage());
+            }
         }
-
-        if (jsonResponse.contains("\"slim\":")) {
-            int start = jsonResponse.indexOf("\"slim\":\"") + 8;
-            int end = jsonResponse.indexOf("\"", start);
-            return jsonResponse.substring(start, end);
-        } else if (jsonResponse.contains("\"default\":")) {
-            int start = jsonResponse.indexOf("\"default\":\"") + 11;
-            int end = jsonResponse.indexOf("\"", start);
-            return jsonResponse.substring(start, end);
-        }
-
         return null;
     }
 
-    public void applySkinFromTextureId(UUID playerUUID, String playerName, String textureId) throws Exception {
+    public void applySkinFromTextureId(UUID playerUUID, String playerName, SkinSearchResult result) throws Exception {
         ensureApiInitialized();
-        String textureUrl = String.format(TEXTURE_URL, textureId);
+        String textureUrl = result.server.texture.replace("%texture%", result.textureId);
         BufferedImage skinImage = ImageIO.read(new URL(textureUrl));
 
         if (skinImage == null) {
@@ -83,13 +123,13 @@ public class SkinManager {
         String signature = skinData[1];
 
         skinStorage.setCustomSkinData(playerName, SkinProperty.of(value, signature));
-        Optional<InputDataResult> result = skinStorage.findOrCreateSkinData(playerName);
+        Optional<InputDataResult> skinDataResult = skinStorage.findOrCreateSkinData(playerName);
 
-        if (!result.isPresent()) {
+        if (!skinDataResult.isPresent()) {
             throw new IOException("无法创建皮肤数据");
         }
 
-        playerStorage.setSkinIdOfPlayer(playerUUID, result.get().getIdentifier());
+        playerStorage.setSkinIdOfPlayer(playerUUID, skinDataResult.get().getIdentifier());
 
         logger.info(playerName + "的皮肤数据已更新");
     }

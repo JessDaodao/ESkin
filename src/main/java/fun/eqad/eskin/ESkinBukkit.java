@@ -2,6 +2,7 @@ package fun.eqad.eskin;
 
 import fun.eqad.eskin.manager.SkinManager;
 import org.bukkit.ChatColor;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -22,6 +23,7 @@ public final class ESkinBukkit extends JavaPlugin implements Listener {
     private FileConfiguration config;
     private File configFile;
     private FileConfiguration msgConfig;
+    private FileConfiguration mainConfig;
 
     @Override
     public void onEnable() {
@@ -71,11 +73,36 @@ public final class ESkinBukkit extends JavaPlugin implements Listener {
                     msgFile.createNewFile();
                 }
             } catch (IOException e) {
-                getLogger().warning("无法创建消息配置文件: " + e.getMessage());
+                getLogger().warning("无法创建配置文件: " + e.getMessage());
                 e.printStackTrace();
             }
         }
         msgConfig = YamlConfiguration.loadConfiguration(msgFile);
+
+        File mainConfigFile = new File(getDataFolder(), "config.yml");
+        if (!mainConfigFile.exists()) {
+            try (InputStream in = getResource("config.yml")) {
+                if (in != null) {
+                    Files.copy(in, mainConfigFile.toPath());
+                } else {
+                    mainConfigFile.createNewFile();
+                }
+            } catch (IOException e) {
+                getLogger().warning("无法创建配置文件: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        mainConfig = YamlConfiguration.loadConfiguration(mainConfigFile);
+
+        skinManager.clearSkinServers();
+        ConfigurationSection skinServers = mainConfig.getConfigurationSection("skin-servers");
+        if (skinServers != null) {
+            for (String key : skinServers.getKeys(false)) {
+                String csl = skinServers.getString(key + ".csl");
+                String texture = skinServers.getString(key + ".texture");
+                skinManager.addSkinServer(key, csl, texture);
+            }
+        }
     }
 
     @Override
@@ -94,14 +121,16 @@ public final class ESkinBukkit extends JavaPlugin implements Listener {
         String playerName = player.getName();
 
         getServer().getScheduler().runTaskLaterAsynchronously(this, () -> {
+            SkinManager.SkinSearchResult result = null;
             try {
-                String currentTextureId = skinManager.getPlayerTextureId(playerName);
+                result = skinManager.getPlayerTextureId(playerName);
 
-                if (currentTextureId == null) {
+                if (result == null) {
                     getLogger().info("未能在皮肤站上读取到" + playerName + "的皮肤数据");
                     return;
                 }
 
+                String currentTextureId = result.textureId;
                 String cachedTextureId = config.getString(player.getUniqueId().toString());
 
                 if (currentTextureId.equals(cachedTextureId)) {
@@ -109,17 +138,17 @@ public final class ESkinBukkit extends JavaPlugin implements Listener {
                     return;
                 }
 
-                skinManager.applySkinFromTextureId(player.getUniqueId(), playerName, currentTextureId);
+                skinManager.applySkinFromTextureId(player.getUniqueId(), playerName, result);
                 SkinsRestorerProvider.get().getSkinApplier(Player.class).applySkin(player);
 
                 config.set(player.getUniqueId().toString(), currentTextureId);
                 saveConfig();
 
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', msgConfig.getString("success")));
+                String successMsg = msgConfig.getString("success").replace("%name%", result.server.name);
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', successMsg));
 
             } catch (Exception e) {
-                getLogger().warning(playerName + "的皮肤更新失败: " + e.getMessage());
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', msgConfig.getString("failed")));
+                getLogger().warning("出现意外错误: " + e.getMessage());
             }
         }, 20L);
     }
