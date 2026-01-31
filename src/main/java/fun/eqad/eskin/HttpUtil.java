@@ -8,7 +8,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class HttpUtil {
-    private static final String USER_AGENT = "ESkinPlugin/1.0";
+    private static final String USER_AGENT = "ESkin";
 
     public static String getJson(String urlString) throws IOException {
         URL url = new URL(urlString);
