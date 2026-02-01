@@ -8,3 +8,6 @@ skin-servers:
   LittleSkin:
     csl: "https://littleskin.cn/csl/%player%.json"
     texture: "https://littleskin.cn/textures/%texture%"
+  EquestriaSkin:
+    csl: "https://skin.eqmemory.cn/csl/%player%.json"
+    texture: "https://skin.eqmemory.cn/textures/%texture%"

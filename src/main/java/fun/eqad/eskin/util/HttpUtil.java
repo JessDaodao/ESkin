@@ -32,7 +32,11 @@ public class HttpUtil {
             while ((inputLine = in.readLine()) != null) {
                 response.append(inputLine);
             }
-            return response.toString();
+            String result = response.toString();
+            if (result.trim().isEmpty() || result.trim().equals("{}")) {
+                return null;
+            }
+            return result;
         }
     }
 
