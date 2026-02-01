@@ -75,6 +75,7 @@ public class SkinManager {
                 String jsonResponse = HttpUtil.getJson(apiUrl);
 
                 if (jsonResponse == null || jsonResponse.isEmpty()) {
+                    logger.info("玩家" + playerName + "在皮肤站" + server.name + "无皮肤数据");
                     continue;
                 }
 
@@ -93,7 +94,7 @@ public class SkinManager {
                     return new SkinSearchResult(textureId, server);
                 }
             } catch (Exception e) {
-                logger.warning("从 " + server.name + " 获取皮肤失败: " + e.getMessage());
+                logger.warning("从" + server.name + "获取皮肤失败: " + e.getMessage());
             }
         }
         return null;
@@ -131,7 +132,7 @@ public class SkinManager {
 
         playerStorage.setSkinIdOfPlayer(playerUUID, skinDataResult.get().getIdentifier());
 
-        logger.info(playerName + "的皮肤数据已在 " + result.server.name + " 更新");
+        logger.info(playerName + "的皮肤数据已在" + result.server.name + "更新");
     }
 
     private String[] uploadSkinToMineSkin(String skinUrl) throws Exception {
